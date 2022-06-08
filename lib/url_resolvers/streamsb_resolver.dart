@@ -1,5 +1,7 @@
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+
+import 'package:dio/dio.dart';
+
 import './helpers.dart';
 
 class StreamSBResolver {
@@ -13,7 +15,7 @@ class StreamSBResolver {
   );
 
   Future<List> resolveUrl(String url) async {
-    final client = http.Client();
+    Dio client = Dio();
     url = url.replaceAll('/e/', '/d/');
     String host = Uri.parse(url).host;
     String rurl = 'https://$host/';
@@ -21,19 +23,19 @@ class StreamSBResolver {
       'User-Agent': randUA(),
       'Referer': rurl,
     };
-    final res = await client.get(Uri.parse(url));
+    final res = await client.get(url);
     if (res.statusCode == 200) {
-      final body = res.body;
-      final downloadMatches = _downloadRegex.firstMatch(body);
+
+      final downloadMatches = _downloadRegex.firstMatch(res.data);
       final id = downloadMatches?.group(1);
       final hash = downloadMatches?.group(2);
       final dUrl = '${rurl}dl?op=download_orig&id=$id&mode=n&hash=$hash';
       final res2 = await client.get(
-        Uri.parse(dUrl),
-        headers: headers,
+        dUrl,
+        options: Options(headers: headers),
       );
       if (res2.statusCode == 200) {
-        final body2 = res2.body;
+        var body2= res2.data;
         final domain = base64Encode(
                 utf8.encode((rurl.substring(0, rurl.length - 1) + ':443')))
             .replaceAll('=', '');
@@ -42,14 +44,14 @@ class StreamSBResolver {
         headers['Content-Type'] = 'application/x-www-form-urlencoded';
         final form_content = getHidden(body2);
         form_content['g-recaptcha-response'] = token.toString();
-        final res3 = await http.post(
-          Uri.parse(dUrl),
-          body: form_content,
-          headers: headers,
+        final res3 = await client.post(
+          dUrl,
+          data: form_content,
+          options: Options(headers: headers),
         );
         if (res3.statusCode == 200) {
           String mediaUrl =
-              _urlRegex.firstMatch(res3.body)?.group(1).toString() ?? '';
+              _urlRegex.firstMatch(res3.data)?.group(1).toString() ?? '';
           return [
             {
               'label': '720p',

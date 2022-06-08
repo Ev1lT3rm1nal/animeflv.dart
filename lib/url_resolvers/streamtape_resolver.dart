@@ -1,5 +1,5 @@
 import 'package:animeflv/globals.dart';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 
 class StreamTapeResolver {
   String regex = r'''ById\('.+?=\s*(["']\/\/[^;<]+)''';
@@ -9,8 +9,8 @@ class StreamTapeResolver {
       'Referer': 'https://streamtape.com/',
     };
     try {
-      final res = await http.Client().get(Uri.parse(url), headers: headers);
-      final src = RegExp(regex, caseSensitive: false).allMatches(res.body).last;
+      final res = await Dio().get(url, options: Options(headers: headers));
+      final src = RegExp(regex, caseSensitive: false).allMatches(res.data).last;
 
       String srcUrl = '';
       final parts = src[src.groupCount]!.replaceAll("'", '"').split('+');

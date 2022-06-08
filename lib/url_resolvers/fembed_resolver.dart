@@ -1,10 +1,11 @@
-import 'package:http/http.dart' as http;
+
+import 'package:dio/dio.dart';
+
 import './helpers.dart';
-import 'dart:convert';
 
 class FembedResolver {
   Future<List> resolveUrl(webUrl) async {
-    http.Client client = http.Client();
+    Dio client = Dio();
     final String host = Uri.parse(webUrl).host;
     final String mediaId = List.from(webUrl.split('/').reversed)[0];
     final Map<String, String> headers = {
@@ -12,11 +13,11 @@ class FembedResolver {
     };
     headers['Referer'] = webUrl;
     String apiUrl = 'https://$host/api/source/$mediaId';
-    final res = await client.post(Uri.parse(apiUrl), headers: headers);
+    final res = await client.post(apiUrl, options: Options(headers: headers));
     if (res.statusCode == 200) {
-      final Map<String, dynamic> apiRes = json.decode(res.body);
-      if (apiRes['success']) {
-        return apiRes['data'];
+
+      if (res.data['success']) {
+        return res.data['data'];
       }
     }
     return [];

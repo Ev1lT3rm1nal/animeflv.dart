@@ -1,9 +1,10 @@
 import 'dart:math';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
+
 import '../globals.dart';
 
 Future<String> girc(page_data, url, co) async {
-  final client = http.Client();
+  final client = Dio();
   final Map<String, String> hdrs = {
     'User-Agent': FF_USER_AGENT.toString(),
     'Referer': url,
@@ -18,10 +19,10 @@ Future<String> girc(page_data, url, co) async {
     rurl = '$rurl?render=$key';
     rurl = '$rurl?render=$key';
     final page_data1 = (await client.get(
-      Uri.parse(rurl),
-      headers: hdrs,
+      rurl,
+      options: Options(headers: hdrs),
     ))
-        .body;
+        .data;
     final v = RegExp(
       r'releases\/([^\/]+)',
       caseSensitive: false,
@@ -37,10 +38,10 @@ Future<String> girc(page_data, url, co) async {
     };
     final furl = '$aurl/anchor?${urlEncode(rdata)}';
     final page_data2 = (await client.get(
-      Uri.parse(furl),
-      headers: hdrs,
+      furl,
+      options: Options(headers: hdrs),
     ))
-        .body;
+        .data;
     final rtoken = RegExp(
       r'recaptcha-token.+?="([^"]+)',
       caseSensitive: false,
@@ -56,11 +57,11 @@ Future<String> girc(page_data, url, co) async {
       };
       hdrs['Referer'] = aurl;
       final page_data3 = (await client.post(
-        Uri.parse('$aurl/reload?k=$key'),
-        body: pdata,
-        headers: hdrs,
+        '$aurl/reload?k=$key',
+        data: pdata,
+        options: Options(headers: hdrs),
       ))
-          .body;
+          .data;
       final gtoken = RegExp(
         'rresp","([^"]+)',
         caseSensitive: false,
