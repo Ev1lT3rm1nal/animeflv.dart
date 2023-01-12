@@ -139,39 +139,45 @@ class AnimeFlv {
         // for zippyshare we can get a direct download link so we create it and replace it
         for (var server in ret) {
           if (server['server'] == 'Zippyshare') {
-            final resZS = await _dio.get(server['url']);
-            if (resZS.statusCode == 200) {
+            try {
+              final resZS = await _dio.get(server['url']);
+              if (resZS.statusCode != 200) {
+                return ret;
+              }
               final body = resZS.data.toString();
               final soup = BeautifulSoup(body);
 
               final scripts = soup.findAll('script');
               for (var script in scripts) {
                 final content = script.toString();
-                if (content.contains('var n = ')) {
-                  final n = int.parse(content
-                          .split('\n')[1]
-                          .trim()
-                          .split('var n = ')[1]
-                          .split('%')[0]) %
-                      2;
-                  final b = int.parse(content
-                          .split('\n')[2]
-                          .trim()
-                          .split('var b = ')[1]
-                          .split('%')[0]) %
-                      3;
-                  final z = int.parse(content
-                      .split('\n')[3]
-                      .trim()
-                      .split('var z = ')[1]
-                      .split(';')[0]);
-                  final title = content.split('\n')[4].trim().split('"')[3];
-                  final serverurl = server['url']
-                      .replaceAll('v', 'd')
-                      .replaceAll('file.html', '${n + b + z - 3}$title');
-                  server['url'] = serverurl;
+                if (!content.contains('var n = ')) {
+                  return ret;
                 }
+                final n = int.parse(content
+                        .split('\n')[1]
+                        .trim()
+                        .split('var n = ')[1]
+                        .split('%')[0]) %
+                    2;
+                final b = int.parse(content
+                        .split('\n')[2]
+                        .trim()
+                        .split('var b = ')[1]
+                        .split('%')[0]) %
+                    3;
+                final z = int.parse(content
+                    .split('\n')[3]
+                    .trim()
+                    .split('var z = ')[1]
+                    .split(';')[0]);
+                final title = content.split('\n')[4].trim().split('"')[3];
+                final serverurl = server['url']
+                    .replaceAll('v', 'd')
+                    .replaceAll('file.html', '${n + b + z - 3}$title');
+                server['url'] = serverurl;
               }
+            } catch (e) {
+              print(e);
             }
           }
         }
@@ -179,7 +185,7 @@ class AnimeFlv {
         return ret;
       } catch (e) {}
     }
-    return [];
+    return List.empty();
   }
 
   // =================================================================================================================================================
